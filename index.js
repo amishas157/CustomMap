@@ -9,6 +9,8 @@ var map = new mapboxgl.Map({
     zoom: 12 // starting zoom
 });
 
+var points = [];
+
 var bbox = [77.4368, 12.8225, 77.7564, 13.0939];
 
 var size = 1;
@@ -24,15 +26,65 @@ map.on('load', function () {
     map.addLayer({
         'id': 'hospitals',
         'source': 'amenities',
-        "type": "symbol",
+        "type": "circle",
+        'source-layer': "amenities",
+        'filter': ["==", 'amenity', 'hospital']
+    });
+    map.addSource('hospitalSource', {
+        type: 'geojson',
+        data: hexgrid
+    });
+    map.addLayer({
+        'id': 'hospitalLayer',
+        'source': 'hospitalSource',
+        "type": "fill",
+        "paint": {
+        'fill-color': {
+            property: 'count',
+            stops: [
+              [0, '#FF6666'],
+              [1, '#FF4040'],
+              [2, '#FF3030'],
+              [3, '#EE0000 '],
+              [4, '#8B0000']
+            ]
+          },
+          "fill-outline-color": "#000000",
+          "fill-opacity": 0.5
+        },
         "layout": {
-            "icon-image": "airport-15",
-            "icon-padding": 0,
             "visibility": 'visible'
         },
-        'source-layer': 'hospital',
-        'filter': ["==", "amenity", 'hospital']
+        'source-layer': "hospitalSource"
     });
 })
+  map.on('moveend', function() {
+    var obj = map.querySourceFeatures('amenities',  { sourceLayer : 'amenities', filter: ["==", 'amenity', 'hospital']  });
+    points = obj;
+    countem();
+    map.getSource("hospitalSource").setData(hexgrid);
+})
+function countem(){
 
-  map.querySourceFeatures('amenities');
+  for(var y=0;y<Object.keys(hexgrid.features).length-1;y++){
+
+  for(var c=0;c<points.length-1;c++){
+  var poly=turf.polygon(hexgrid.features[y].geometry.coordinates);
+
+  if(points[c].geometry["type"] == "Polygon" ) {
+      if(turf.inside(turf.centroid(points[c]),poly))
+        hexgrid.features[y].properties.count += 1;
+  }
+
+  if(points[c].geometry["type"] == "Point")
+  {
+    if(turf.inside(points[c],poly)){
+      console.log("Yeah!Its done");
+      hexgrid.features[y].properties.count += 1;
+      console.log(hexgrid.features[y].properties.count);
+    }
+  }
+
+  } //end 2nd for
+  }//end 1st for
+}
