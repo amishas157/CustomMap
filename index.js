@@ -4,9 +4,10 @@ mapboxgl.accessToken = 'pk.eyJ1IjoiYW1pc2hhIiwiYSI6ImNpcWt1bWc4bjAzOXNmdG04bng4d
 
 var map = new mapboxgl.Map({
     container: 'map', // container id
-    style: 'mapbox://styles/mapbox/streets-v9', //stylesheet location
+    style: 'mapbox://styles/mapbox/light-v9', //stylesheet location
     center: [77.5966, 12.9582], // starting position
-    zoom: 12 // starting zoom
+    zoom: 12,
+    hash: true // starting zoom
 });
 
 var points = [];
@@ -21,70 +22,96 @@ hexgrid.features[x].properties.count=0;}
 map.on('load', function () {
     map.addSource('amenities', {
         type: 'vector',
-        url: 'mapbox://amisha.awotbgdx'
+        url: 'mapbox://amisha.b2cj5ml6'
     });
     map.addLayer({
-        'id': 'hospitals',
+        'id': 'amenitiesLayer',
         'source': 'amenities',
-        "type": "circle",
+        "type": "fill",
+        "paint": {
+         'fill-color': '#FFFFFF',
+          "fill-opacity": 0.1
+        },
         'source-layer': "amenities",
-        'filter': ["==", 'amenity', 'hospital']
+        "layout": {
+            "visibility": 'visible'
+        }
     });
-    map.addSource('hospitalSource', {
+
+    map.addSource('hexSource', {
         type: 'geojson',
         data: hexgrid
     });
     map.addLayer({
-        'id': 'hospitalLayer',
-        'source': 'hospitalSource',
+        'id': 'hexLayer',
+        'source': 'hexSource',
         "type": "fill",
         "paint": {
         'fill-color': {
             property: 'count',
             stops: [
-              [0, '#FF6666'],
-              [1, '#FF4040'],
-              [2, '#FF3030'],
-              [3, '#EE0000 '],
-              [4, '#8B0000']
+              [0, '#FFFFFF'],
+              [2, '#FFDDCC'],
+              [4, '#FFBB99'],
+              [6, '#FF9966'],
+              [8, '#FF7733'],
+              [10, '#FF5500'],
+              [12, '#CC4400'],
+              [14, '#993300'],
+              [16, '#662200']
             ]
           },
-          "fill-outline-color": "#000000",
           "fill-opacity": 0.5
         },
         "layout": {
-            "visibility": 'visible'
-        },
-        'source-layer': "hospitalSource"
+            "visibility": 'none'
+        }
     });
 })
-  map.on('moveend', function() {
-    var obj = map.querySourceFeatures('amenities',  { sourceLayer : 'amenities', filter: ["==", 'amenity', 'hospital']  });
-    points = obj;
-    countem();
-    map.getSource("hospitalSource").setData(hexgrid);
-})
-function countem(){
 
+var layerList = document.getElementById('menu');
+var inputs = layerList.getElementsByTagName('input');
+
+for (var i = 0; i < inputs.length; i++) {
+    inputs[i].onclick = showDensity;
+}
+
+function showDensity(filter) {
+  map.setLayoutProperty('hexLayer', 'visibility', 'visible');
+  var filterId = filter.target.id;
+  var obj = map.querySourceFeatures('amenities',  { sourceLayer : 'amenities', filter: ["==", 'amenity', filterId]  });
+  console.log(obj.length);
+  points = obj;
+  countem();
+  map.getSource("hexSource").setData(hexgrid);
+}
+function countem(){
+  for(var x=0;x<Object.keys(hexgrid.features).length;x++){
+  hexgrid.features[x].properties.count=0;}
+
+   var arr = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
   for(var y=0;y<Object.keys(hexgrid.features).length-1;y++){
 
   for(var c=0;c<points.length-1;c++){
   var poly=turf.polygon(hexgrid.features[y].geometry.coordinates);
-
   if(points[c].geometry["type"] == "Polygon" ) {
-      if(turf.inside(turf.centroid(points[c]),poly))
+      if(turf.inside(turf.centroid(points[c]),poly)) {
         hexgrid.features[y].properties.count += 1;
+        arr[hexgrid.features[y].properties.count] += 1; }
   }
 
   if(points[c].geometry["type"] == "Point")
   {
     if(turf.inside(points[c],poly)){
-      console.log("Yeah!Its done");
       hexgrid.features[y].properties.count += 1;
-      console.log(hexgrid.features[y].properties.count);
+      arr[hexgrid.features[y].properties.count] += 1;
     }
   }
 
-  } //end 2nd for
-  }//end 1st for
+  }
+  }
+  //console.log(Object.keys(hexgrid.features).length-1);
+  for(var i=0; i<=16; i++) {
+    //console.log(i + "  " + arr[i]);
+  }
 }

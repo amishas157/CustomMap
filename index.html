@@ -7,13 +7,29 @@
     <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.21.0/mapbox-gl.js'></script>
     <script src='https://api.tiles.mapbox.com/mapbox.js/plugins/turf/v3.0.11/turf.min.js'></script>
     <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.21.0/mapbox-gl.css' rel='stylesheet' />
+    <link href='//mapbox.com/base/latest/base.css' rel='stylesheet'/>
     <style>
         body { margin:0; padding:0; }
         #map { position:absolute; top:0; bottom:0; width:100%; }
+}
     </style>
 </head>
 <body>
   <div id='map'></div>
+  <div id='menu' class='pad2 radio-pill pill clearfix col12'>
+    <input id='hospital' type='radio' class='disabled' name='amenity'>
+    <label for='hospital' class='col2 button icon check'>Hospital</label>
+    <input id='school' type='radio' name='amenity'>
+    <label for='school' class='col2 button icon check'>School</label>
+    <input id='gym' type='radio' name='amenity'>
+    <label for='gym' class='col2 button icon check'>Gym</label>
+    <input id='restaurant' type='radio' name='amenity'>
+    <label for='restaurant' class='col2 button icon check'>Restaurant</label>
+    <input id='atm' type='radio' name='amenity'>
+    <label for='atm' class='col2 button icon check'>ATM</label>
+    <input id='bank' type='radio' name='amenity'>
+    <label for='bank' class='col2 button icon check'>Bank</label>
+  </div>
   <script src='index.js'></script>
 </body>
 </html>
