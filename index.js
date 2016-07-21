@@ -21,8 +21,8 @@ hexgrid.features[x].properties.count=0;}
 
 map.on('load', function () {
     map.addSource('amenities', {
-        type: 'vector',
-        url: 'mapbox://amisha.b2cj5ml6'
+        type: 'geojson',
+        data: 'output.geojson'
     });
     map.addLayer({
         'id': 'amenitiesLayer',
@@ -32,7 +32,6 @@ map.on('load', function () {
          'fill-color': '#FFFFFF',
           "fill-opacity": 0.1
         },
-        'source-layer': "amenities",
         "layout": {
             "visibility": 'visible'
         }
@@ -79,20 +78,22 @@ for (var i = 0; i < inputs.length; i++) {
 function showDensity(filter) {
   map.setLayoutProperty('hexLayer', 'visibility', 'visible');
   var filterId = filter.target.id;
-  var obj = map.querySourceFeatures('amenities',  { sourceLayer : 'amenities', filter: ["==", 'amenity', filterId]  });
+  var obj = map.querySourceFeatures('amenities',  { filter: ["==", 'amenity', filterId]  });
   console.log(obj.length);
   points = obj;
   countem();
   map.getSource("hexSource").setData(hexgrid);
 }
 function countem(){
+  console.log("length" + Object.keys(hexgrid.features).length-1);
   for(var x=0;x<Object.keys(hexgrid.features).length;x++){
   hexgrid.features[x].properties.count=0;}
 
    var arr = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
-  for(var y=0;y<Object.keys(hexgrid.features).length-1;y++){
 
-  for(var c=0;c<points.length-1;c++){
+  for(var y=0;y<Object.keys(hexgrid.features).length;y++){
+
+  for(var c=0;c<points.length;c++){
   var poly=turf.polygon(hexgrid.features[y].geometry.coordinates);
   if(points[c].geometry["type"] == "Polygon" ) {
       if(turf.inside(turf.centroid(points[c]),poly)) {
@@ -110,8 +111,8 @@ function countem(){
 
   }
   }
-  //console.log(Object.keys(hexgrid.features).length-1);
+  console.log(Object.keys(hexgrid.features).length-1);
   for(var i=0; i<=16; i++) {
-    //console.log(i + "  " + arr[i]);
+    console.log(i + "  " + arr[i]);
   }
 }
