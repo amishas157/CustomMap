@@ -1,5 +1,4 @@
 "use strict";
-
 mapboxgl.accessToken = 'pk.eyJ1IjoiYW1pc2hhIiwiYSI6ImNpcWt1bWc4bjAzOXNmdG04bng4dHVhZ3EifQ.bJK6rpjNmiP3kW2pROdScg';
 
 var map = new mapboxgl.Map({
@@ -10,37 +9,19 @@ var map = new mapboxgl.Map({
     hash: true // starting zoom
 });
 
-var points = [];
+var amenities;
+var filteredAmenity = {};
 
 var bbox = [77.4368, 12.8225, 77.7564, 13.0939];
-
 var size = 1;
-var hexgrid = turf.hexGrid(bbox, size);
-for(var x=0;x<Object.keys(hexgrid.features).length;x++){
-hexgrid.features[x].properties.count=0;}
+var temp = turf.hexGrid(bbox, size);
+
+var hexgrid = {};
 
 map.on('load', function () {
-    map.addSource('amenities', {
-        type: 'vector',
-        url: 'mapbox://amisha.b2cj5ml6'
-    });
-    map.addLayer({
-        'id': 'amenitiesLayer',
-        'source': 'amenities',
-        "type": "fill",
-        "paint": {
-         'fill-color': '#FFFFFF',
-          "fill-opacity": 0.1
-        },
-        'source-layer': "amenities",
-        "layout": {
-            "visibility": 'visible'
-        }
-    });
-
     map.addSource('hexSource', {
         type: 'geojson',
-        data: hexgrid
+        data: temp
     });
     map.addLayer({
         'id': 'hexLayer',
@@ -51,17 +32,21 @@ map.on('load', function () {
             property: 'count',
             stops: [
               [0, '#FFFFFF'],
-              [2, '#FFDDCC'],
-              [4, '#FFBB99'],
-              [6, '#FF9966'],
-              [8, '#FF7733'],
-              [10, '#FF5500'],
-              [12, '#CC4400'],
-              [14, '#993300'],
-              [16, '#662200']
+              [3, '#D0EBBE'],
+              [6, '#B1DE93'],
+              [9, '#92D168'],
+              [12, '#73C43D'],
+              [15, '#64be28'],
+              [18, '#509820'],
+              [21, '#3C7218'],
+              [24, '#325F14'],
+              [27, '#284C10'],
+              [30, '#1E390C'],
+              [33, '#182e0a'],
+              [36, '#122207']
             ]
           },
-          "fill-opacity": 0.5
+          "fill-opacity": 0.5,
         },
         "layout": {
             "visibility": 'none'
@@ -76,42 +61,61 @@ for (var i = 0; i < inputs.length; i++) {
     inputs[i].onclick = showDensity;
 }
 
+function filterByAmenity(obj) {
+  var filter = $('input[name=amenity]:checked', '#menu').attr('id');
+  if (obj.properties.amenity == filter) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
 function showDensity(filter) {
-  map.setLayoutProperty('hexLayer', 'visibility', 'visible');
-  var filterId = filter.target.id;
-  var obj = map.querySourceFeatures('amenities',  { sourceLayer : 'amenities', filter: ["==", 'amenity', filterId]  });
-  console.log(obj.length);
-  points = obj;
-  countem();
-  map.getSource("hexSource").setData(hexgrid);
+                $.ajax({
+                      url: "amenities.geojson",
+                      //force to handle it as text
+                      dataType: "text",
+                      success: function(data) {
+
+                          amenities = $.parseJSON(data);
+                          filteredAmenity= amenities.features.filter(filterByAmenity);
+                          map.setLayoutProperty('hexLayer', 'visibility', 'visible');
+                          countem();
+                          map.getSource("hexSource").setData(hexgrid);
+                      }
+                  });
 }
 function countem(){
-  for(var x=0;x<Object.keys(hexgrid.features).length;x++){
+  hexgrid = turf.hexGrid(bbox, size);
+  var count = 0;
+  for(var x=0;x<hexgrid.features.length;x++){
   hexgrid.features[x].properties.count=0;}
-
-   var arr = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
-  for(var y=0;y<Object.keys(hexgrid.features).length-1;y++){
-
-  for(var c=0;c<points.length-1;c++){
+  console.log(hexgrid.features.length);
+  for(var y=0;y<Object.keys(hexgrid.features).length;){
+     count = 0;
+  for(var c=0;c<filteredAmenity.length;c++){
   var poly=turf.polygon(hexgrid.features[y].geometry.coordinates);
-  if(points[c].geometry["type"] == "Polygon" ) {
-      if(turf.inside(turf.centroid(points[c]),poly)) {
+  if(filteredAmenity[c].geometry["type"] == "Polygon" ) {
+      if(turf.inside(turf.centroid(filteredAmenity[c]),poly)) {
         hexgrid.features[y].properties.count += 1;
-        arr[hexgrid.features[y].properties.count] += 1; }
+        count++;
+    }
   }
 
-  if(points[c].geometry["type"] == "Point")
+  if(filteredAmenity[c].geometry["type"] == "Point")
   {
-    if(turf.inside(points[c],poly)){
+    if(turf.inside(filteredAmenity[c],poly)){
       hexgrid.features[y].properties.count += 1;
-      arr[hexgrid.features[y].properties.count] += 1;
+      count++;
     }
   }
 
   }
+  if(count == 0) {
+    hexgrid.features.splice( y, 1 );
   }
-  //console.log(Object.keys(hexgrid.features).length-1);
-  for(var i=0; i<=16; i++) {
-    //console.log(i + "  " + arr[i]);
+  else {
+    y++;
+  }
   }
 }
