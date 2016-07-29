@@ -1,22 +1,65 @@
 "use strict";
+
 mapboxgl.accessToken = 'pk.eyJ1IjoiYW1pc2hhIiwiYSI6ImNpcWt1bWc4bjAzOXNmdG04bng4dHVhZ3EifQ.bJK6rpjNmiP3kW2pROdScg';
 
 var map = new mapboxgl.Map({
     container: 'map', // container id
-    style: 'mapbox://styles/mapbox/light-v9', //stylesheet location
+    style: 'mapbox://styles/mapbox/dark-v9', //stylesheet location
     center: [77.5966, 12.9582], // starting position
     zoom: 12,
     hash: true // starting zoom
 });
 
+console.log(map.getBounds());
+
 var amenities;
 var filteredAmenity = {};
 
-var bbox = [77.4368, 12.8225, 77.7564, 13.0939];
+var bbox = [map.getBounds()["_sw"]["lng"], map.getBounds()["_sw"]["lat"], map.getBounds()["_ne"]["lng"], map.getBounds()["_ne"]["lat"]];
+//var bbox = [77.4368, 12.8225, 77.7564, 13.0939];
 var size = 1;
 var temp = turf.hexGrid(bbox, size);
 
 var hexgrid = {};
+
+var filterEl = document.getElementById('feature-filter');
+var listingEl = document.getElementById('feature-listing');
+
+var availableAmenities = [
+  "ActionScript",
+  "AppleScript",
+  "Asp",
+  "BASIC",
+  "C",
+  "C++",
+  "Clojure"
+];
+
+function normalize(string) {
+    return string.trim().toLowerCase();
+}
+
+function renderListings(amenities) {
+    filterEl.setAttribute("placeholder", amenities[0]);
+     // listingEl.innerHTML = '';
+     //    amenities.forEach(function(amenity) {
+     //        var item = document.createElement('button');
+     //        item.addEventListener('mouseover', function() {
+     //        });
+     //        listingEl.appendChild(item);
+     //    });
+}
+
+filterEl.addEventListener('keyup', function(e) {
+  var value = normalize(e.target.value);
+
+  var filtered = availableAmenities.filter(function(feature) {
+    var name = normalize(feature);
+    return name.indexOf(value) > -1;
+  });
+  renderListings(filtered);
+
+});
 
 map.on('load', function () {
     map.addSource('hexSource', {
@@ -46,12 +89,26 @@ map.on('load', function () {
               [36, '#122207']
             ]
           },
-          "fill-opacity": 0.5,
+          "fill-opacity": 0.9
         },
         "layout": {
             "visibility": 'none'
         }
     });
+    map.addSource('amenitiesSource', {
+        "type": "vector",
+        "url": "mapbox://amisha.4f400ilq"
+    });
+    map.addLayer({
+        'id': 'amenitiesLayer',
+        'source': 'amenitiesSource',
+        'source-layer': 'outputgeojson',
+        "type": "fill",
+        "paint": {
+        'fill-color': '#FFFFFF',
+        'fill-opacity': 0.5
+        }
+    });    
 })
 
 var layerList = document.getElementById('menu');
@@ -71,19 +128,12 @@ function filterByAmenity(obj) {
 }
 
 function showDensity(filter) {
-                $.ajax({
-                      url: "amenities.geojson",
-                      //force to handle it as text
-                      dataType: "text",
-                      success: function(data) {
+  amenities = map.querySourceFeatures('amenitiesSource', {sourceLayer: 'outputgeojson'});
+  filteredAmenity= amenities.filter(filterByAmenity);
+  map.setLayoutProperty('hexLayer', 'visibility', 'visible');
+  countem();
+  map.getSource("hexSource").setData(hexgrid);
 
-                          amenities = $.parseJSON(data);
-                          filteredAmenity= amenities.features.filter(filterByAmenity);
-                          map.setLayoutProperty('hexLayer', 'visibility', 'visible');
-                          countem();
-                          map.getSource("hexSource").setData(hexgrid);
-                      }
-                  });
 }
 function countem(){
   hexgrid = turf.hexGrid(bbox, size);
