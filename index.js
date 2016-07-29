@@ -10,10 +10,9 @@ var map = new mapboxgl.Map({
     hash: true // starting zoom
 });
 
-console.log(map.getBounds());
-
 var amenities;
 var filteredAmenity = {};
+var globalFilter;
 
 var bbox = [map.getBounds()["_sw"]["lng"], map.getBounds()["_sw"]["lat"], map.getBounds()["_ne"]["lng"], map.getBounds()["_ne"]["lat"]];
 //var bbox = [77.4368, 12.8225, 77.7564, 13.0939];
@@ -24,15 +23,17 @@ var hexgrid = {};
 
 var filterEl = document.getElementById('feature-filter');
 var listingEl = document.getElementById('feature-listing');
+filterEl.value = "";
+listingEl.setAttribute("display", "none");
 
 var availableAmenities = [
-  "ActionScript",
-  "AppleScript",
-  "Asp",
-  "BASIC",
-  "C",
-  "C++",
-  "Clojure"
+  "bar",
+  "bbq",
+  "biergarten",
+  "pub",
+  "restaurant",
+  "college",
+  "library"
 ];
 
 function normalize(string) {
@@ -40,14 +41,24 @@ function normalize(string) {
 }
 
 function renderListings(amenities) {
-    filterEl.setAttribute("placeholder", amenities[0]);
-     // listingEl.innerHTML = '';
-     //    amenities.forEach(function(amenity) {
-     //        var item = document.createElement('button');
-     //        item.addEventListener('mouseover', function() {
-     //        });
-     //        listingEl.appendChild(item);
-     //    });
+      listingEl.innerHTML = '';
+     if(amenities.length > 0) {
+      listingEl.removeAttribute("display");
+        amenities.forEach(function(amenity) {
+            var item = document.createElement('a');
+            item.textContent = amenity;
+            item.addEventListener('click', function() {
+                globalFilter = amenity;
+                filterEl.value = amenity;
+                listingEl.innerHTML = '';
+                showDensity(amenity);
+                globalFilter = '';
+            });
+            listingEl.appendChild(item);
+        });
+     }
+     else
+      listingEl.setAttribute("display", "none");
 }
 
 filterEl.addEventListener('keyup', function(e) {
@@ -119,7 +130,14 @@ for (var i = 0; i < inputs.length; i++) {
 }
 
 function filterByAmenity(obj) {
-  var filter = $('input[name=amenity]:checked', '#menu').attr('id');
+  var filter;
+  if (globalFilter) {
+    filter = globalFilter;
+  }
+  else {
+    filter = $('input[name=amenity]:checked', '#menu').attr('id');
+  }
+
   if (obj.properties.amenity == filter) {
     return true;
   } else {
@@ -140,7 +158,6 @@ function countem(){
   var count = 0;
   for(var x=0;x<hexgrid.features.length;x++){
   hexgrid.features[x].properties.count=0;}
-  console.log(hexgrid.features.length);
   for(var y=0;y<Object.keys(hexgrid.features).length;){
      count = 0;
   for(var c=0;c<filteredAmenity.length;c++){
