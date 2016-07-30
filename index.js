@@ -26,29 +26,30 @@ var listingEl = document.getElementById('feature-listing');
 filterEl.value = "";
 listingEl.setAttribute("display", "none");
 
+// List of filter items
 var availableAmenities = [
-  "bar",
-  "bbq",
-  "biergarten",
-  "pub",
-  "restaurant",
-  "college",
-  "library"
+    "bar",
+    "bbq",
+    "biergarten",
+    "pub",
+    "restaurant",
+    "college",
+    "library"
 ];
 
 function normalize(string) {
     return string.trim().toLowerCase();
 }
 
+// Create more filter items
 function renderListings(amenities) {
-      listingEl.innerHTML = '';
-     if(amenities.length > 0) {
-      listingEl.removeAttribute("display");
+    listingEl.innerHTML = '';
+    if (amenities.length > 0) {
+        listingEl.removeAttribute("display");
         amenities.forEach(function(amenity) {
             var item = document.createElement('a');
             item.textContent = amenity;
             item.addEventListener('click', function() {
-                globalFilter = amenity;
                 filterEl.value = amenity;
                 listingEl.innerHTML = '';
                 showDensity(amenity);
@@ -56,15 +57,14 @@ function renderListings(amenities) {
             });
             listingEl.appendChild(item);
         });
-     }
-     else
-      listingEl.setAttribute("display", "none");
+    } else
+        listingEl.setAttribute("display", "none");
 
 }
 
+// Listen to filter icons
 filterEl.addEventListener('keyup', function(e) {
     var value = normalize(e.target.value);
-
     var filtered = availableAmenities.filter(function(feature) {
         var name = normalize(feature);
         return name.indexOf(value) > -1;
@@ -74,6 +74,7 @@ filterEl.addEventListener('keyup', function(e) {
 });
 
 map.on('load', function() {
+
     // Density hexgrid overlay
     map.addSource('hexSource', {
         type: 'geojson',
@@ -116,64 +117,62 @@ map.on('load', function() {
             'circle-radius': 2
         }
     });
-
-
-
-})
+});
 
 var layerList = document.getElementById('menu');
 var inputs = layerList.getElementsByTagName('input');
 
+// Attach events
 for (var i = 0; i < inputs.length; i++) {
     inputs[i].onclick = showDensity;
 }
 
-var selectedAmenity;
 
+
+// Filter only matching features
 function filterByAmenity(obj) {
-  var filter;
-  selectedAmenity = filter;
-  if (globalFilter) {
-    filter = globalFilter;
-  }
-  else {
-    filter = $('input[name=amenity]:checked', '#menu').attr('id');
-  }
+    var filter;
+    if (globalFilter) {
+        filter = globalFilter;
+    } else {
+        filter = $('input[name=amenity]:checked', '#menu').attr('id');
+    }
 
-  if (obj.properties.amenity == filter) {
-    return true;
-  } else {
-    return false;
-  }
+    if (obj.properties.amenity == filter) {
+        return true;
+    } else {
+        return false;
+    }
 
 }
 
+// Render the feature density
 function showDensity(filter) {
+
     amenities = map.querySourceFeatures('amenitiesSource', {
         sourceLayer: 'outputgeojson'
     });
+
+    console.log(filter);
+
     filteredAmenity = amenities.filter(filterByAmenity);
     map.setLayoutProperty('hexLayer', 'visibility', 'visible');
-    map.setFilter('amenitiesLayer', ['==', 'amenity', selectedAmenity]);
+    map.setFilter('amenitiesLayer', ['==', 'amenity', filter]);
     countem();
     map.getSource("hexSource").setData(hexgrid);
 
 }
-function countem(){
-  hexgrid = turf.hexGrid(bbox, size);
-  var count = 0;
-  for(var x=0;x<hexgrid.features.length;x++){
-  hexgrid.features[x].properties.count=0;}
-  for(var y=0;y<Object.keys(hexgrid.features).length;){
-     count = 0;
-  for(var c=0;c<filteredAmenity.length;c++){
-  var poly=turf.polygon(hexgrid.features[y].geometry.coordinates);
-  if(filteredAmenity[c].geometry["type"] == "Polygon" ) {
-      if(turf.inside(turf.centroid(filteredAmenity[c]),poly)) {
-        hexgrid.features[y].properties.count += 1;
-        count++;
+
+// Create a hexgrid and count matched features in each cell
+function countem() {
+
+    // Create a hexgrid
+    hexgrid = turf.hexGrid(bbox, size);
+
+    var count = 0;
+    for (var x = 0; x < hexgrid.features.length; x++) {
+        hexgrid.features[x].properties.count = 0;
     }
-    console.log(hexgrid.features.length);
     for (var y = 0; y < Object.keys(hexgrid.features).length;) {
         count = 0;
         for (var c = 0; c < filteredAmenity.length; c++) {
