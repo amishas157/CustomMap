@@ -37,6 +37,7 @@ var availableAmenities = [
     "library"
 ];
 
+
 function normalize(string) {
     return string.trim().toLowerCase();
 }
@@ -137,6 +138,7 @@ function filterByAmenity(obj) {
     } else {
         filter = $('input[name=amenity]:checked', '#menu').attr('id');
     }
+    globalFilter = filter;
 
     if (obj.properties.amenity == filter) {
         return true;
@@ -153,11 +155,9 @@ function showDensity(filter) {
         sourceLayer: 'outputgeojson'
     });
 
-    console.log(filter);
-
     filteredAmenity = amenities.filter(filterByAmenity);
     map.setLayoutProperty('hexLayer', 'visibility', 'visible');
-    map.setFilter('amenitiesLayer', ['==', 'amenity', filter]);
+    map.setFilter('amenitiesLayer', ['==', 'amenity', globalFilter]);
     countem();
     map.getSource("hexSource").setData(hexgrid);
 
