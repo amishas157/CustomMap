@@ -53,8 +53,8 @@ function renderListings(amenities) {
             item.addEventListener('click', function() {
                 filterEl.value = amenity;
                 listingEl.innerHTML = '';
-                showDensity(amenity);
-                globalFilter = '';
+                globalFilter = amenity;
+                showDensity();
             });
             listingEl.appendChild(item);
         });
@@ -138,7 +138,6 @@ function filterByAmenity(obj) {
     } else {
         filter = $('input[name=amenity]:checked', '#menu').attr('id');
     }
-    globalFilter = filter;
 
     if (obj.properties.amenity == filter) {
         return true;
@@ -149,11 +148,12 @@ function filterByAmenity(obj) {
 }
 
 // Render the feature density
-function showDensity(filter) {
+function showDensity() {
 
     amenities = map.querySourceFeatures('amenitiesSource', {
         sourceLayer: 'outputgeojson'
     });
+
 
     filteredAmenity = amenities.filter(filterByAmenity);
     map.setLayoutProperty('hexLayer', 'visibility', 'visible');
